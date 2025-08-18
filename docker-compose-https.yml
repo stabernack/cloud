@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+    traefik:
+        image: traefik:v3.5.0
+        container_name: traefik
+        restart: unless-stopped
+        networks:
+            - traefik-network
+        ports:
+            - "80:80"
+            - "443:443"
+            - "8080:8080"
+        command:
+            - "--api.insecure=true"
+            - "--providers.docker=true"
+            - "--providers.docker.network=traefik-network"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+            - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+            - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+            - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+            - "--log.level=DEBUG"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./traefik:/traefik
+            - ./letsencrypt:/letsencrypt
+        environment:
+            - TRAEFIK_API_DASHBOARD=true
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`)"
+            - "traefik.http.routers.traefik.service=api@internal"
+            - "traefik.http.routers.traefik.entrypoints=web"
+
+    database:
+        image: postgres:15
+        container_name: database
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        volumes:
+            - ./database:/var/lib/postgresql/data
+        networks:
+            - nextcloud-network
+
+    nextcloud:
+        image: nextcloud:latest
+        container_name: nextcloud
+        restart: unless-stopped
+        environment:
+            POSTGRES_HOST: database
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+            NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+            NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_TRUSTED_DOMAINS}
+            OVERWRITEPROTOCOL: https
+            OVERWRITEPORT: 443
+            OVERWRITEHOST: ${NEXTCLOUD_HOST}
+        volumes:
+            - ./nextcloud:/var/www/html
+        networks:
+            - nextcloud-network
+            - traefik-network
+        depends_on:
+            - database
+        labels:
+            - "traefik.enable=true"
+            - "traefik.docker.network=traefik-network"
+            - "traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_HOST}`)"
+            - "traefik.http.routers.nextcloud.entrypoints=web"
+            - "traefik.http.routers.nextcloud-secure.rule=Host(`${NEXTCLOUD_HOST}`)"
+            - "traefik.http.routers.nextcloud-secure.entrypoints=websecure"
+            - "traefik.http.routers.nextcloud-secure.tls.certresolver=letsencrypt"
+            - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+            - "traefik.http.routers.nextcloud.middlewares=redirect-to-https"
+            - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+
+volumes:
+    database:
+        driver: local
+
+networks:
+    traefik-network:
+        driver: bridge
+    nextcloud-network:
+        driver: bridge
