@@ -54,8 +54,12 @@ services:
             NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
             NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_TRUSTED_DOMAINS}
             OVERWRITEPROTOCOL: http
-            OVERWRITEPORT: 80
+            OVERWRITECLIURL: http://${NEXTCLOUD_HOST}
+            OVERWRITECONNECTION: http
+            OVERWRITEPORT: 8080
             OVERWRITEHOST: ${NEXTCLOUD_HOST}
+        ports:
+            - "1337:8080"
         volumes:
             - ./nextcloud:/var/www/html
         networks:
