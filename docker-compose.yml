@@ -10,9 +10,7 @@ services:
         ports:
             - "80:80"
             - "443:443"
-            - "8080:8080"
         command:
-            - "--api.insecure=true"
             - "--providers.docker=true"
             - "--providers.docker.network=traefik-network"
             - "--entrypoints.web.address=:80"
@@ -24,8 +22,6 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik:/traefik
-        environment:
-            - TRAEFIK_API_DASHBOARD=true
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`)"
@@ -49,8 +45,6 @@ services:
         image: nextcloud:latest
         container_name: nextcloud-aio-mastercontainer
         restart: unless-stopped
-        ports:
-            - "8081:8080"
         environment:
             POSTGRES_HOST: database
             POSTGRES_DB: ${POSTGRES_DB}
@@ -61,11 +55,11 @@ services:
             NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_HOST}
             OVERWRITEHOST: ${NEXTCLOUD_HOST}
             OVERWRITEPROTOCOL: https
-            TRUSTED_PROXIES: ${TRAEFIK_INTERNAL_SUBNET_IP}
             APACHE_PORT: 80
             APACHE_ADDITIONAL_NETWORK: traefik-network
         volumes:
-            - ./nextcloud:/var/www/html
+            - nextcloud_src:/var/www/html
+            - ./nextcloud:${NEXTCLOUD_DATADIR}
         networks:
             - nextcloud-network
             - traefik-network
@@ -85,6 +79,8 @@ services:
 
 volumes:
     database:
+        driver: local
+    nextcloud_src:
         driver: local
 
 networks:
