@@ -24,7 +24,6 @@ services:
             - ./traefik:/traefik
         labels:
             - "traefik.enable=true"
-            - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`)"
             - "traefik.http.routers.traefik.service=api@internal"
             - "traefik.http.routers.traefik.entrypoints=web"
 
