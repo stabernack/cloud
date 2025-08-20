@@ -22,9 +22,6 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik:/traefik
-        labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.traefik.entrypoints=web"
 
     database:
         image: postgres:15
