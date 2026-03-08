@@ -62,10 +62,10 @@ services:
             APACHE_PORT: 80
             APACHE_ADDITIONAL_NETWORK: traefik-network
             REDIS_HOST: redis
-            PHP_MEMORY_LIMIT: 1G
+            PHP_MEMORY_LIMIT: 4G
             PHP_UPLOAD_LIMIT: 10G
             PHP_MAX_EXECUTION_TIME: 3600
-            NEXTCLOUD_MEMORY_LIMIT: 1024M
+            NEXTCLOUD_MEMORY_LIMIT: 4096M
             NEXTCLOUD_TRUSTED_PROXIES: ${NEXTCLOUD_TRUSTED_PROXIES}
         # Health check for Nextcloud
         healthcheck:
